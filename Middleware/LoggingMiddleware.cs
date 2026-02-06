@@ -46,17 +46,45 @@ public sealed class LoggingMiddleware(
 
     private static async Task<string> ReadRequestBodyAsync(HttpRequest request)
     {
-        if (request.ContentLength is null or 0)
+        // Always enable buffering and read the raw request body as text (may include multipart boundaries and binary data)
+        request.EnableBuffering();
+
+        // rewind in case upstream has read
+        try
         {
-            return string.Empty;
+            request.Body.Position = 0;
+        }
+        catch
+        {
+            // ignore if not seekable
         }
 
-        request.EnableBuffering();
-        request.Body.Position = 0;
-        using var reader = new StreamReader(request.Body, Encoding.UTF8, leaveOpen: true);
-        var body = await reader.ReadToEndAsync();
-        request.Body.Position = 0;
-        return body;
+        using var ms = new MemoryStream();
+        await request.Body.CopyToAsync(ms);
+        var bytes = ms.ToArray();
+
+        // rewind so downstream can read
+        try
+        {
+            request.Body.Position = 0;
+        }
+        catch
+        {
+            // ignore
+        }
+
+        if (bytes.Length == 0) return string.Empty;
+
+        // Try decode as UTF8; binary data may produce replacement chars
+        var bodyText = Encoding.UTF8.GetString(bytes);
+
+        const int maxLength = 4096;
+        if (bodyText.Length > maxLength)
+        {
+            return bodyText.Substring(0, maxLength) + "...(truncated)";
+        }
+
+        return bodyText;
     }
 
 }
