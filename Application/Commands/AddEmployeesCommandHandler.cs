@@ -15,13 +15,44 @@ public sealed class AddEmployeesCommandHandler(IEmployeeRepository repository)
             return new AddEmployeesResult(0);
         }
 
-        var employees = command.Employees.Select(input => new Employee(
-            input.Name,
-            input.Email,
-            input.Tel,
-            input.Joined));
+        // Remove duplicates: - within the incoming batch (all fields identical) and - those already stored (all fields identical)
+        var toAdd = new List<Employee>();
+        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        await repository.AddRangeAsync(employees, cancellationToken);
-        return new AddEmployeesResult(command.Employees.Count);
+        static string NormalizeTel(string? tel) => string.IsNullOrWhiteSpace(tel) ? string.Empty : tel.Replace("-", "").Trim();
+
+        foreach (var input in command.Employees)
+        {
+            var normalizedTel = NormalizeTel(input.Tel);
+            var key = $"{input.Name}|{input.Email}|{normalizedTel}|{input.Joined:yyyy-MM-dd}";
+
+            // skip duplicate entries within the batch (all fields identical after normalization)
+            if (!seenKeys.Add(key))
+            {
+                continue;
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var candidate = new Employee(
+                input.Name,
+                input.Email,
+                normalizedTel,
+                input.Joined);
+
+            // skip if an employee with identical data already exists in repository
+            var exists = await repository.ExistsAsync(candidate, cancellationToken);
+            if (!exists)
+            {
+                toAdd.Add(candidate);
+            }
+        }
+
+        if (toAdd.Count > 0)
+        {
+            await repository.AddRangeAsync(toAdd, cancellationToken);
+        }
+
+        return new AddEmployeesResult(toAdd.Count);
     }
 }

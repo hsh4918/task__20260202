@@ -6,11 +6,12 @@ using emergency_contact_system.Application.Models;
 namespace emergency_contact_system.Application.Queries;
 
 public sealed class GetEmployeeByNameQueryHandler(IEmployeeRepository repository)
-    : IQueryHandler<GetEmployeeByNameQuery, EmployeeDto?>
+    : IQueryHandler<GetEmployeeByNameQuery, IReadOnlyList<EmployeeDto>>
 {
-    public async Task<EmployeeDto?> HandleAsync(GetEmployeeByNameQuery query, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<EmployeeDto>> HandleAsync(GetEmployeeByNameQuery query, CancellationToken cancellationToken)
     {
-        var employee = await repository.GetByNameAsync(query.Name, cancellationToken);
-        return employee is null ? null : EmployeeMapper.ToDto(employee);
+        var employees = await repository.GetByNameAsync(query.Name, cancellationToken);
+        var items = employees.Select(EmployeeMapper.ToDto).ToList();
+        return items;
     }
 }

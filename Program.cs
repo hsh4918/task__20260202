@@ -8,6 +8,7 @@ using emergency_contact_system.Infrastructure.Repositories;
 using emergency_contact_system.Middleware;
 using Serilog;
 using Serilog.Events;
+using System.Collections.Generic;
 
 try
 {
@@ -45,7 +46,7 @@ try
     builder.Services.AddSingleton<IEmployeeImportParser, EmployeeImportParser>();
     builder.Services.AddScoped<ICommandHandler<AddEmployeesCommand, AddEmployeesResult>, AddEmployeesCommandHandler>();
     builder.Services.AddScoped<IQueryHandler<GetEmployeesQuery, PagedResult<EmployeeDto>>, GetEmployeesQueryHandler>();
-    builder.Services.AddScoped<IQueryHandler<GetEmployeeByNameQuery, EmployeeDto?>, GetEmployeeByNameQueryHandler>();
+    builder.Services.AddScoped<IQueryHandler<GetEmployeeByNameQuery, IReadOnlyList<EmployeeDto>>, GetEmployeeByNameQueryHandler>();
 
     var app = builder.Build();
 

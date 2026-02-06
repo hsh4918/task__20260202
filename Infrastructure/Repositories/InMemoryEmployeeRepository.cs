@@ -20,13 +20,33 @@ public sealed class InMemoryEmployeeRepository : IEmployeeRepository
         return Task.CompletedTask;
     }
 
-    public Task<Employee?> GetByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<Employee>> GetByNameAsync(string name, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         lock (_lock)
         {
-            var employee = _employees.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
-            return Task.FromResult(employee);
+            var items = _employees
+                .Where(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            return Task.FromResult((IReadOnlyList<Employee>)items);
+        }
+    }
+
+    public Task<bool> ExistsAsync(Employee employee, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        lock (_lock)
+        {
+            static string NormalizeTel(string? tel) => string.IsNullOrWhiteSpace(tel) ? string.Empty : tel.Replace("-", "").Trim();
+
+            var exists = _employees.Any(e =>
+                string.Equals(e.Name, employee.Name, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(e.Email, employee.Email, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(NormalizeTel(e.Tel), NormalizeTel(employee.Tel), StringComparison.OrdinalIgnoreCase)
+                && e.Joined == employee.Joined);
+
+            return Task.FromResult(exists);
         }
     }
 

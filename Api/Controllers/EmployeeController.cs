@@ -12,7 +12,7 @@ namespace emergency_contact_system.Api.Controllers;
 public sealed class EmployeeController(
     ICommandHandler<AddEmployeesCommand, AddEmployeesResult> addEmployeesHandler,
     IQueryHandler<GetEmployeesQuery, PagedResult<EmployeeDto>> getEmployeesHandler,
-    IQueryHandler<GetEmployeeByNameQuery, EmployeeDto?> getEmployeeByNameHandler,
+    IQueryHandler<GetEmployeeByNameQuery, IReadOnlyList<EmployeeDto>> getEmployeeByNameHandler,
     IEmployeeImportParser importParser,
     ILogger<EmployeeController> logger)
     : ControllerBase
@@ -32,12 +32,12 @@ public sealed class EmployeeController(
     }
 
     [HttpGet("{name}")]
-    [ProducesResponseType(typeof(EmployeeDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<EmployeeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetByName(string name)
     {
         var result = await getEmployeeByNameHandler.HandleAsync(new GetEmployeeByNameQuery(name), HttpContext.RequestAborted);
-        return result is null ? NotFound("조회 대상이 없습니다.") : Ok(result);
+        return result == null || result.Count == 0 ? NotFound("조회 대상이 없습니다.") : Ok(result);
     }
 
     [HttpPost]
