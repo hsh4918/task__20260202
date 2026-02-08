@@ -105,3 +105,7 @@
 
 또한 `LoggingMiddleware`에서 요청/응답 바디를 캡처하여 `Debug` 레벨 로그에 포함시킵니다. 실제 Connection String은 입력하지 않았기 때문에 APM 로그는 활성화 되지 않습니다.
 
+## API 호출 테스트 및 파일 업로드 진행 예시
+- Swagger UI: `https://localhost:{port}/swagger`에서 API 엔드포인트를 테스트할 수 있습니다.
+- Postman: `POST /api/employee` 엔드포인트에 `multipart/form-data`로 CSV/JSON 파일을 업로드하여 테스트할 수 있으며, 그 외 GET에 대한 요청도 가능합니다.
+- Sample App을 만들어 Api 호출 테스트를 진행했습니다.
