@@ -79,5 +79,5 @@ finally
     Log.CloseAndFlush();
 }
 
-// Expose Program class for WebApplicationFactory in integration tests
+//Test가 진입점을 참조할 수 있도록 partial로 선언
 public partial class Program { }
