@@ -10,11 +10,13 @@
 
   <ItemGroup>
     <Compile Remove="Logs\**" />
+    <Compile Remove="tests\**" />
     <Content Remove="Logs\**" />
+    <Content Remove="tests\**" />
     <EmbeddedResource Remove="Logs\**" />
+    <EmbeddedResource Remove="tests\**" />
     <None Remove="Logs\**" />
-    <Compile Remove="tests\**\*.cs" />
-    <None Remove="tests\**\*" />
+    <None Remove="tests\**" />
   </ItemGroup>
 
   <!-- Test project should not be included as content in the main web project. -->
