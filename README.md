@@ -17,7 +17,7 @@
 - `GET /api/employee/{name}`: 이름으로 조회 시 동일 이름을 가진 모든 직원(리스트)을 반환합니다. 결과가 없으면 `404 NotFound`를 반환합니다.
 - 직원 목록 조회는 이름 기준 오름차순으로 정렬되어 반환됩니다.
 - `POST /api/employee`(업로드): 최초 저장 이후 동일한 직원 정보는 추가되지 않습니다. "동일"은 `Name`, `Email`, `Tel`, `Joined` 네 필드가 모두 동일한 경우로 판단합니다.
-- 전화번호 정규화: 비교 및 저장 전에 전화번호에서 하이픈(`-`)을 제거합니다. (추가 정규화가 필요하면 별도 적용 가능)
+- 전화번호 정규화: 비교 및 저장 전에 전화번호에서 하이픈(`-`)을 제거합니다.
 
 ## 엔드포인트
 
@@ -63,6 +63,38 @@
 
 개발 환경에서는 Swagger가 자동 활성화되어 `https://localhost:{port}/swagger`에서 API를 테스트할 수 있습니다.
 
+## 테스트
+
+단위 테스트와 통합 테스트가 포함되어 있습니다. 주요 테스트와 역할은 다음과 같습니다:
+
+- `tests/emergency_contact_system.Tests/Services/EmployeeImportParserTests.cs`
+  - `EmployeeImportParser`의 CSV/JSON 파싱 동작 검증 (CSV 정상 파싱, 잘못된 JSON 입력 시 예외 발생).
+- `tests/emergency_contact_system.Tests/Commands/AddEmployeesCommandHandlerTests.cs`
+  - `AddEmployeesCommandHandler` 동작 검증: 저장소에 같은 항목이 이미 있으면 추가되지 않는지 확인.
+- `tests/emergency_contact_system.Tests/Queries/GetEmployeeByNameQueryHandlerTests.cs`
+  - `GetEmployeeByNameQueryHandler` 동작 검증: 동일 이름을 가진 모든 레코드를 반환하는지 확인.
+- `tests/emergency_contact_system.Tests/Repositories/InMemoryEmployeeRepositoryTests.cs`
+  - 인메모리 저장소 동작 검증: 추가 후 존재 여부(`ExistsAsync`) 확인.
+- `tests/emergency_contact_system.Tests/Controllers/EmployeeControllerIntegrationTests.cs`
+  - 통합 테스트: `POST /api/employee`로 JSON 업로드 시 HTTP 201 및 응답에 `addedCount` 포함 여부 확인.
+
+테스트에 사용된 주요 라이브러리와 이유:
+
+- `xUnit`: .NET에서 널리 쓰이는 테스트 프레임워크로, 단위/통합 테스트 실행과 필터링이 쉬워 선택했습니다.
+- `FluentAssertions`: 가독성 높은 표현식으로 기대값 검증을 작성할 수 있어 테스트 가독성을 높입니다.
+- `Moq`: 리포지토리 같은 외부 의존성을 모킹하여 핸들러/서비스를 독립적으로 단위 테스트할 수 있게 해줍니다.
+
+테스트 실행 방법:
+
+- 솔루션 루트에서 전체 테스트 실행:
+  - `dotnet test` (또는 특정 테스트 프로젝트만)
+
+- 특정 테스트 프로젝트만 실행:
+  - `dotnet test tests\emergency_contact_system.Tests\emergency_contact_system.Tests.csproj`
+
+- 특정 테스트 클래스 또는 메서드만 실행하려면 필터 사용:
+  - 예: `dotnet test --filter FullyQualifiedName~EmployeeImportParserTests`
+
 ## 로깅
 
 프로젝트는 `Serilog`를 사용합니다. 로그는 레벨별로 파일에 기록됩니다:
@@ -71,5 +103,5 @@
 - `Logs/info/log-.txt`
 - `Logs/error/log-.txt`
 
-또한 `LoggingMiddleware`에서 요청/응답 바디를 캡처하여 `Debug` 레벨 로그에 포함시킵니다.
+또한 `LoggingMiddleware`에서 요청/응답 바디를 캡처하여 `Debug` 레벨 로그에 포함시킵니다. 실제 Connection String은 입력하지 않았기 때문에 APM 로그는 활성화 되지 않습니다.
 
